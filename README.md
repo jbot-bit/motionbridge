@@ -48,3 +48,4 @@ curl -X POST https://<your-worker>.workers.dev/add-tasks \
 5. Deploy: `npx wrangler deploy` (ensure `name` is set in `wrangler.jsonc`)
 
 Logs and errors appear in the Wrangler console; non-POST paths return `404`, and JSON parse errors return `400`.
+All error responses are JSON objects shaped like `{ "error": "message" }`.

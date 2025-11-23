@@ -5,6 +5,10 @@ function jsonResponse(body, status = 200, headers = JSON_HEADERS) {
   return new Response(JSON.stringify(body), { status, headers });
 }
 
+function errorResponse(message, status = 400) {
+  return jsonResponse({ error: message }, status);
+}
+
 async function readJson(request) {
   try {
     return await request.json();
@@ -89,7 +93,7 @@ async function createMotionTask(taskPayload, motionApiKey) {
 async function handleBridge(request, env) {
   const body = await readJson(request);
   if (body?.error) {
-    return new Response(body.error, { status: 400 });
+    return errorResponse(body.error);
   }
 
   const message = body.message ?? body.text ?? "Hello";
@@ -107,28 +111,28 @@ async function handleBridge(request, env) {
 
     return jsonResponse({ reply, motionForwarded: Boolean(motionWebhook) });
   } catch (error) {
-    return new Response(error.message, { status: 500 });
+    return errorResponse(error.message, 500);
   }
 }
 
 async function handleAddTasks(request, env) {
   const body = await readJson(request);
   if (body?.error) {
-    return new Response(body.error, { status: 400 });
+    return errorResponse(body.error);
   }
 
   const tasks = body.tasks;
   if (!Array.isArray(tasks) || tasks.length === 0) {
-    return new Response("Missing tasks array", { status: 400 });
+    return errorResponse("Missing tasks array");
   }
 
   const workspaceId = env.MOTION_WORKSPACE_ID;
   const motionApiKey = env.MOTION_API_KEY;
   if (!workspaceId) {
-    return new Response("Missing MOTION_WORKSPACE_ID secret", { status: 500 });
+    return errorResponse("Missing MOTION_WORKSPACE_ID secret", 500);
   }
   if (!motionApiKey) {
-    return new Response("Missing MOTION_API_KEY secret", { status: 500 });
+    return errorResponse("Missing MOTION_API_KEY secret", 500);
   }
 
   const created = [];
@@ -170,7 +174,7 @@ async function handleAddTasks(request, env) {
 export default {
   async fetch(request, env) {
     if (request.method !== "POST") {
-      return new Response("Send POST", { status: 405 });
+      return errorResponse("Send POST", 405);
     }
 
     const { pathname } = new URL(request.url);
@@ -183,6 +187,6 @@ export default {
       return handleAddTasks(request, env);
     }
 
-    return new Response("Not found", { status: 404 });
+    return errorResponse("Not found", 404);
   },
 };

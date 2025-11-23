@@ -49,6 +49,22 @@ describe('MotionBridge worker', () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it('returns JSON error when payload is invalid JSON', async () => {
+    const request = new Request('https://example.com/bridge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'not-json',
+    });
+
+    const ctx = createExecutionContext();
+    const response = await worker.fetch(request, { ...BASE_ENV }, ctx);
+    await waitOnExecutionContext(ctx);
+
+    expect(response.status).toBe(400);
+    const data = await response.json();
+    expect(data).toEqual({ error: 'Invalid JSON body' });
+  });
+
   it('creates Motion tasks on /add-tasks and returns per-task status', async () => {
     const fetchMock = vi.fn(async (input, init) => {
       if (typeof input === 'string' && input.includes('usemotion.com')) {
